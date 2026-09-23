@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+//teste do pipeline
 // O controller NÃO tem regra de negócio: só recebe a requisição e repassa pro service.
 // TODO [PROVA] Troque "/cursos" pela rota do enunciado
 @RestController
