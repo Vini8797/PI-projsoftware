@@ -28,7 +28,7 @@ Os dois têm "um tipo" e "várias classes". A diferença está na **pergunta que
 |---|---|---|
 | Pergunta | "Qual objeto eu **crio**?" | "Qual algoritmo eu **uso**?" |
 | O que resolve (slide do professor) | criação de objetos **espalhada** pelo código | `if/else` que **cresce** a cada comportamento novo |
-| Os objetos | **novos a cada pedido**, carregam dados (aluno, curso) | **já existem**, não guardam dados, só comportamento |
+| Os objetos | **novos a cada pedido**, carregam dados (aluno, avaliacao) | **já existem**, não guardam dados, só comportamento |
 | No Spring | classe `@Component` com `switch` + `new` | várias classes `@Component("NOME")` + `Map<String, Interface>` |
 | Palavra-chave | `new` | `implements` + escolher no `Map` |
 
@@ -141,14 +141,14 @@ No `TODO [PADRAO] Campos @Autowired`:
 No `TODO [PADRAO] Métodos dos padrões`:
 
 ```java
-    // GET /cursos/{id}/preco?desconto=ESTUDANTE
+    // GET /avaliacaos/{id}/preco?desconto=ESTUDANTE
     public BigDecimal calcularPrecoFinal(Long id, String tipoDesconto) {
-        Curso curso = buscarCurso(id);
+        Curso avaliacao = buscarCurso(id);
         CalculadoraDesconto calculadora = calculadoras.get(tipoDesconto.toUpperCase());
         if (calculadora == null) {
             throw new DescontoInvalidoException("Tipo de desconto invalido: " + tipoDesconto);
         }
-        return calculadora.aplicar(curso.getPreco());
+        return calculadora.aplicar(avaliacao.getPreco());
     }
 ```
 
@@ -195,13 +195,13 @@ No `TODO [PADRAO] Testes dos padrões` — **2 testes**, um para cada lado do `i
 ```java
     @Test
     public void test_shouldApplyDescontoWhenTipoIsValid() {
-        Curso curso = new Curso();
-        curso.setId(1L);
-        curso.setPreco(new BigDecimal("200.00"));
+        Curso avaliacao = new Curso();
+        avaliacao.setId(1L);
+        avaliacao.setPreco(new BigDecimal("200.00"));
 
-        Mockito.when(cursoRepository.findById(1L)).thenReturn(Optional.of(curso));
+        Mockito.when(cursoRepository.findById(1L)).thenReturn(Optional.of(avaliacao));
         Mockito.when(calculadoras.get("ESTUDANTE")).thenReturn(calculadora);
-        Mockito.when(calculadora.aplicar(curso.getPreco())).thenReturn(new BigDecimal("100.00"));
+        Mockito.when(calculadora.aplicar(avaliacao.getPreco())).thenReturn(new BigDecimal("100.00"));
 
         // minúsculo de propósito: prova que o toUpperCase() funciona
         BigDecimal resultado = cursoService.calcularPrecoFinal(1L, "estudante");
@@ -211,11 +211,11 @@ No `TODO [PADRAO] Testes dos padrões` — **2 testes**, um para cada lado do `i
 
     @Test
     public void test_shouldThrowWhenTipoDescontoIsInvalid() {
-        Curso curso = new Curso();
-        curso.setId(1L);
-        curso.setPreco(new BigDecimal("200.00"));
+        Curso avaliacao = new Curso();
+        avaliacao.setId(1L);
+        avaliacao.setPreco(new BigDecimal("200.00"));
 
-        Mockito.when(cursoRepository.findById(1L)).thenReturn(Optional.of(curso));
+        Mockito.when(cursoRepository.findById(1L)).thenReturn(Optional.of(avaliacao));
         Mockito.when(calculadoras.get("INEXISTENTE")).thenReturn(null);
 
         Assertions.assertThrows(DescontoInvalidoException.class,
@@ -232,18 +232,18 @@ No `TODO [PADRAO] Testes de integração`:
 ```java
     @Test
     public void test_shouldReturnPrecoComDescontoEstudante() throws Exception {
-        Curso curso = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));  // preço 200.00
+        Curso avaliacao = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));  // preço 200.00
 
-        mockMvc.perform(get("/cursos/" + curso.getId() + "/preco").param("desconto", "ESTUDANTE"))
+        mockMvc.perform(get("/avaliacaos/" + avaliacao.getId() + "/preco").param("desconto", "ESTUDANTE"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("100.00"));
     }
 
     @Test
     public void test_shouldReturn400WhenDescontoIsInvalid() throws Exception {
-        Curso curso = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));
+        Curso avaliacao = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));
 
-        mockMvc.perform(get("/cursos/" + curso.getId() + "/preco").param("desconto", "BLACKFRIDAY"))
+        mockMvc.perform(get("/avaliacaos/" + avaliacao.getId() + "/preco").param("desconto", "BLACKFRIDAY"))
                 .andExpect(status().isBadRequest());
     }
 ```
@@ -251,9 +251,9 @@ No `TODO [PADRAO] Testes de integração`:
 ## Testando na mão
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8080/cursos/1/preco?desconto=ESTUDANTE" -Method Get
-Invoke-RestMethod -Uri "http://localhost:8080/cursos/1/preco?desconto=CORPORATIVO" -Method Get
-Invoke-RestMethod -Uri "http://localhost:8080/cursos/1/preco" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos/1/preco?desconto=ESTUDANTE" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos/1/preco?desconto=CORPORATIVO" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos/1/preco" -Method Get
 ```
 
 ## Pegadinhas
@@ -283,7 +283,7 @@ if (tipo == PARTICIPACAO) cert = new CertificadoParticipacao(...);
 **Com o padrão**, um único lugar decide qual classe criar:
 
 ```
-    CursoService ──pede──▶ CertificadoFactory.criar(tipo, aluno, curso)
+    CursoService ──pede──▶ CertificadoFactory.criar(tipo, aluno, avaliacao)
                                      │  switch + new
                    ┌─────────────────┼─────────────────┐
                    ▼                 ▼                 ▼
@@ -297,7 +297,7 @@ if (tipo == PARTICIPACAO) cert = new CertificadoParticipacao(...);
 
 ## Por que aqui é Factory e não Strategy?
 
-Cada certificado **carrega dados** (o nome da Maria, o nome do curso). Precisa de um objeto **novo** a cada pedido. Um bean do Spring (`@Component`) é um só para a aplicação inteira — não daria para guardar a Maria nele. Por isso os certificados **não são** `@Component`, e quem faz `new` é a factory.
+Cada certificado **carrega dados** (o nome da Maria, o nome do avaliacao). Precisa de um objeto **novo** a cada pedido. Um bean do Spring (`@Component`) é um só para a aplicação inteira — não daria para guardar a Maria nele. Por isso os certificados **não são** `@Component`, e quem faz `new` é a factory.
 
 ## Arquivos (já prontos na pasta)
 
@@ -335,10 +335,10 @@ No `TODO [PADRAO] Campos @Autowired`:
 No `TODO [PADRAO] Métodos dos padrões`:
 
 ```java
-    // GET /cursos/{id}/certificado?tipo=CONCLUSAO&aluno=Maria
+    // GET /avaliacaos/{id}/certificado?tipo=CONCLUSAO&aluno=Maria
     public String gerarCertificado(Long id, TipoCertificado tipo, String aluno) {
-        Curso curso = buscarCurso(id);
-        Certificado certificado = certificadoFactory.criar(tipo, aluno, curso);
+        Curso avaliacao = buscarCurso(id);
+        Certificado certificado = certificadoFactory.criar(tipo, aluno, avaliacao);
         return certificado.gerarTexto();
     }
 ```
@@ -386,18 +386,18 @@ No `TODO [PADRAO] Testes dos padrões`:
 ```java
     @Test
     public void test_shouldGenerateCertificadoUsingFactory() {
-        Curso curso = new Curso();
-        curso.setId(1L);
-        curso.setNome("Java Basico");
+        Curso avaliacao = new Curso();
+        avaliacao.setId(1L);
+        avaliacao.setNome("Java Basico");
 
-        Mockito.when(cursoRepository.findById(1L)).thenReturn(Optional.of(curso));
-        Mockito.when(certificadoFactory.criar(TipoCertificado.CONCLUSAO, "Maria", curso)).thenReturn(certificado);
+        Mockito.when(cursoRepository.findById(1L)).thenReturn(Optional.of(avaliacao));
+        Mockito.when(certificadoFactory.criar(TipoCertificado.CONCLUSAO, "Maria", avaliacao)).thenReturn(certificado);
         Mockito.when(certificado.gerarTexto()).thenReturn("texto do certificado");
 
         String resultado = cursoService.gerarCertificado(1L, TipoCertificado.CONCLUSAO, "Maria");
 
         Assertions.assertEquals("texto do certificado", resultado);
-        Mockito.verify(certificadoFactory).criar(TipoCertificado.CONCLUSAO, "Maria", curso);
+        Mockito.verify(certificadoFactory).criar(TipoCertificado.CONCLUSAO, "Maria", avaliacao);
     }
 ```
 
@@ -416,21 +416,21 @@ No `TODO [PADRAO] Testes de integração`:
 ```java
     @Test
     public void test_shouldGenerateCertificadoConclusao() throws Exception {
-        Curso curso = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));
+        Curso avaliacao = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));
 
-        mockMvc.perform(get("/cursos/" + curso.getId() + "/certificado")
+        mockMvc.perform(get("/avaliacaos/" + avaliacao.getId() + "/certificado")
                         .param("tipo", "CONCLUSAO")
                         .param("aluno", "Maria"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Maria concluiu o curso Java Basico")));
+                .andExpect(content().string(containsString("Maria concluiu o avaliacao Java Basico")));
     }
 ```
 
 ## Testando na mão
 
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8080/cursos/1/certificado?tipo=CONCLUSAO&aluno=Maria" -Method Get
-Invoke-RestMethod -Uri "http://localhost:8080/cursos/1/certificado?tipo=EXCELENCIA&aluno=Joao" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos/1/certificado?tipo=CONCLUSAO&aluno=Maria" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos/1/certificado?tipo=EXCELENCIA&aluno=Joao" -Method Get
 ```
 
 ## Pegadinhas
@@ -448,13 +448,13 @@ Pense num canal do YouTube. Quando sai vídeo novo, **todos os inscritos são av
 
 - **Observable** (o canal) = `CursoService`
 - **Observers** (os inscritos) = `AuditoriaObserver`, `EmailObserver`
-- **O aviso** = `atualizar(curso, evento)`
+- **O aviso** = `atualizar(avaliacao, evento)`
 
 ```
    CursoService (Observable)
      criar() / deletar()
             │
-            └─ notificarObservadores(curso, evento)
+            └─ notificarObservadores(avaliacao, evento)
                         │  for (observer : observers)
             ┌───────────┴───────────┐
             ▼                       ▼
@@ -522,9 +522,9 @@ No `TODO [PADRAO] Métodos dos padrões`:
 
 ```java
     @Override
-    public void notificarObservadores(Curso curso, String evento) {
+    public void notificarObservadores(Curso avaliacao, String evento) {
         for (CursoObserver observer : observers) {
-            observer.atualizar(curso, evento);
+            observer.atualizar(avaliacao, evento);
         }
     }
 ```
@@ -533,17 +533,17 @@ No `TODO [PADRAO] Métodos dos padrões`:
 
 ```java
     public Curso criar(CursoDto dto) {
-        Curso curso = Curso.fromDto(dto);
-        Curso salvo = cursoRepository.save(curso);
+        Curso avaliacao = Curso.fromDto(dto);
+        Curso salvo = cursoRepository.save(avaliacao);
         notificarObservadores(salvo, "CRIADO");
         return salvo;
     }
 
     public void deletar(Long id) {
-        Curso curso = buscarCurso(id);
-        curso.setDeletado(true);
-        cursoRepository.save(curso);
-        notificarObservadores(curso, "DELETADO");
+        Curso avaliacao = buscarCurso(id);
+        avaliacao.setDeletado(true);
+        cursoRepository.save(avaliacao);
+        notificarObservadores(avaliacao, "DELETADO");
     }
 ```
 
@@ -577,10 +577,10 @@ Nos testes que já existem, descomente/adicione as linhas marcadas com `TODO [PA
 
 ```java
     // no final de test_shouldCreateCursoWhenDtoIsValid
-    Mockito.verify(observer).atualizar(curso, "CRIADO");
+    Mockito.verify(observer).atualizar(avaliacao, "CRIADO");
 
     // no final de test_shouldSetDeletadoTrueWhenCursoExists
-    Mockito.verify(observer).atualizar(curso, "DELETADO");
+    Mockito.verify(observer).atualizar(avaliacao, "DELETADO");
 
     // no final de test_shouldThrowExceptionWhenCursoDoesNotExist
     Mockito.verify(observer, Mockito.never()).atualizar(Mockito.any(), Mockito.any());
@@ -603,7 +603,7 @@ docker logs estudopi
 ## Pegadinhas
 
 - **O `@Component` nos observers é obrigatório.** Sem ele o Spring não acha a classe e ela nunca entra na lista — e nenhum erro aparece, simplesmente não imprime.
-- **Chame `notificarObservadores` DEPOIS do `save`**, com o objeto salvo. Antes do `save` o curso ainda não tem `id`.
+- **Chame `notificarObservadores` DEPOIS do `save`**, com o objeto salvo. Antes do `save` o avaliacao ainda não tem `id`.
 - **O nome do campo no `ReflectionTestUtils.setField`** tem que ser exatamente `"observers"`, igual ao do service.
 
 ---
@@ -615,14 +615,17 @@ Para ver onde cada peça mora quando tudo está aplicado:
 ```java
 package br.insper.estudoPI.service;
 
+import br.insper.estudoPI.dto.AvaliacaoDto;
 import br.insper.estudoPI.dto.CursoDto;
-import br.insper.estudoPI.entity.Curso;
+import br.insper.estudoPI.entity.Avaliacao;
+import br.insper.estudoPI.exception.AvaliacaoNaoEncontradaException;
 import br.insper.estudoPI.exception.CursoNaoEncontradoException;
 import br.insper.estudoPI.factory.Certificado;
 import br.insper.estudoPI.factory.CertificadoFactory;
 import br.insper.estudoPI.factory.TipoCertificado;
 import br.insper.estudoPI.observer.CursoObservable;
 import br.insper.estudoPI.observer.CursoObserver;
+import br.insper.estudoPI.repository.AvaliacaoRepository;
 import br.insper.estudoPI.repository.CursoRepository;
 import br.insper.estudoPI.strategy.CalculadoraDesconto;
 import br.insper.estudoPI.strategy.DescontoInvalidoException;
@@ -638,7 +641,7 @@ import java.util.Map;
 public class CursoService implements CursoObservable {
 
     @Autowired
-    private CursoRepository cursoRepository;
+    private AvaliacaoRepository avaliacaoRepository;
 
     @Autowired
     private Map<String, CalculadoraDesconto> calculadoras;          // Strategy
@@ -649,52 +652,52 @@ public class CursoService implements CursoObservable {
     @Autowired(required = false)
     private List<CursoObserver> observers = new ArrayList<>();      // Observer
 
-    public List<Curso> listar(String nome) {
+    public List<Avaliacao> listar(String nome) {
         if (nome == null || nome.isBlank()) {
             return cursoRepository.findByDeletadoFalse();
         }
         return cursoRepository.findByNomeStartingWithIgnoreCaseAndDeletadoFalse(nome);
     }
 
-    public Curso criar(CursoDto dto) {
-        Curso curso = Curso.fromDto(dto);
-        Curso salvo = cursoRepository.save(curso);
+    public Avaliacao criar(AvaliacaoDto dto) {
+        Avaliacao avaliacao = Avaliacao.fromDto(dto);
+        Avaliacao salvo = cursoRepository.save(avaliacao);
         notificarObservadores(salvo, "CRIADO");
         return salvo;
     }
 
     public void deletar(Long id) {
-        Curso curso = buscarCurso(id);
-        curso.setDeletado(true);
-        cursoRepository.save(curso);
-        notificarObservadores(curso, "DELETADO");
+        Avaliacao avaliacao = buscarCurso(id);
+        avaliacao.setDeletado(true);
+        cursoRepository.save(avaliacao);
+        notificarObservadores(avaliacao, "DELETADO");
     }
 
     public BigDecimal calcularPrecoFinal(Long id, String tipoDesconto) {
-        Curso curso = buscarCurso(id);
+        Avaliacao avaliacao = buscarCurso(id);
         CalculadoraDesconto calculadora = calculadoras.get(tipoDesconto.toUpperCase());
         if (calculadora == null) {
             throw new DescontoInvalidoException("Tipo de desconto invalido: " + tipoDesconto);
         }
-        return calculadora.aplicar(curso.getPreco());
+        return calculadora.aplicar(avaliacao.getPreco());
     }
 
     public String gerarCertificado(Long id, TipoCertificado tipo, String aluno) {
-        Curso curso = buscarCurso(id);
-        Certificado certificado = certificadoFactory.criar(tipo, aluno, curso);
+        Avaliacao avaliacao = buscarCurso(id);
+        Certificado certificado = certificadoFactory.criar(tipo, aluno, avaliacao);
         return certificado.gerarTexto();
     }
 
     @Override
-    public void notificarObservadores(Curso curso, String evento) {
+    public void notificarObservadores(Avaliacao avaliacao, String evento) {
         for (CursoObserver observer : observers) {
-            observer.atualizar(curso, evento);
+            observer.atualizar(avaliacao, evento);
         }
     }
 
-    private Curso buscarCurso(Long id) {
+    private Avaliacao buscarCurso(Long id) {
         return cursoRepository.findById(id)
-                .orElseThrow(() -> new CursoNaoEncontradoException("Curso com ID " + id + " não encontrado"));
+                .orElseThrow(() -> new AvaliacaoNaoEncontradaException("Curso com ID " + id + " não encontrado"));
     }
 }
 ```

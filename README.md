@@ -160,7 +160,7 @@ Como o `deploy.yml` roda em todo push na `main`, o push do passo 1.3 **já dispa
 Quando ficar verde:
 
 ```powershell
-Invoke-RestMethod -Uri "http://IP-DA-VM:8080/cursos" -Method Get
+Invoke-RestMethod -Uri "http://IP-DA-VM:8080/avaliacaos" -Method Get
 ```
 
 Resposta vazia (sem erro) = **deu tudo certo**.
@@ -212,8 +212,8 @@ Nessa ordem:
 
 1. **Renomear as classes** — clique no nome da classe → **Shift+F6** → digite o novo nome. Faça em: `Curso`, `CursoDto`, `CursoRepository`, `CursoService`, `CursoController`, `CursoNaoEncontradoException`, `CursoServiceTests`, `CursoControllerTests`. O IntelliJ renomeia o arquivo e todos os usos.
 2. **Trocar os textos** — **Ctrl+Shift+R** (Replace in Path), marque **Match case**:
-   - `"/cursos"` → `"/livros"`
-   - `name = "cursos"` → `name = "livros"`
+   - `"/avaliacaos"` → `"/livros"`
+   - `name = "avaliacaos"` → `name = "livros"`
    - `Curso com ID` → `Livro com ID`
 3. **Ajustar os campos** na entidade, no DTO e no `fromDto()`.
 4. **Ajustar os métodos do repository**: o nome depende do nome do campo. Se trocou `nome` por `titulo`, o método vira `findByTituloStartingWithIgnoreCaseAndDeletadoFalse`. **Esse é o erro mais comum**: ele só aparece quando a aplicação sobe.
@@ -253,7 +253,7 @@ git push -u origin prova
 GitHub → **Compare & pull request** → **Create pull request** → espere o check **verde** → **tire um print** → **Merge pull request** → aba **Actions** → espere o **Deploy** ficar verde → teste na VM:
 
 ```powershell
-Invoke-RestMethod -Uri "http://IP-DA-VM:8080/cursos" -Method Get
+Invoke-RestMethod -Uri "http://IP-DA-VM:8080/avaliacaos" -Method Get
 ```
 
 ---
@@ -336,21 +336,21 @@ Ou no IntelliJ: **Run → Edit Configurations → EstudoPiApplication → Enviro
 
 ```powershell
 # POST
-Invoke-RestMethod -Uri "http://localhost:8080/cursos" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"nome":"Java Basico","descricao":"Introducao","categoria":"Programacao","cargaHoraria":40,"preco":200.00,"instrutor":"Eduardo"}'
-Invoke-RestMethod -Uri "http://localhost:8080/cursos" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"nome":"Java Avancado","cargaHoraria":60,"preco":400.00}'
-Invoke-RestMethod -Uri "http://localhost:8080/cursos" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"nome":"Python","cargaHoraria":30,"preco":150.00}'
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"nome":"Java Basico","descricao":"Introducao","categoria":"Programacao","cargaHoraria":40,"preco":200.00,"instrutor":"Eduardo"}'
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"nome":"Java Avancado","cargaHoraria":60,"preco":400.00}'
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"nome":"Python","cargaHoraria":30,"preco":150.00}'
 
 # GET todos
-Invoke-RestMethod -Uri "http://localhost:8080/cursos" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos" -Method Get
 
 # GET com filtro startWith -> só os 2 de Java
-Invoke-RestMethod -Uri "http://localhost:8080/cursos?nome=Java" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos?nome=Java" -Method Get
 
 # DELETE lógico
-Invoke-RestMethod -Uri "http://localhost:8080/cursos/1" -Method Delete
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos/1" -Method Delete
 
 # GET de novo -> o 1 sumiu
-Invoke-RestMethod -Uri "http://localhost:8080/cursos" -Method Get
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos" -Method Get
 ```
 
 Na VM, troque `localhost` pelo IP da VM.
@@ -359,7 +359,7 @@ Na VM, troque `localhost` pelo IP da VM.
 
 ```powershell
 $body = [System.Text.Encoding]::UTF8.GetBytes('{"nome":"Introdução","cargaHoraria":10}')
-Invoke-RestMethod -Uri "http://localhost:8080/cursos" -Method Post -ContentType "application/json; charset=utf-8" -Body $body
+Invoke-RestMethod -Uri "http://localhost:8080/avaliacaos" -Method Post -ContentType "application/json; charset=utf-8" -Body $body
 ```
 
 ## Olhar dentro do banco
@@ -370,11 +370,11 @@ docker exec -it postgres-aula psql -U usuario -d auladb
 
 ```sql
 \dt
-SELECT id, nome, deletado FROM cursos;
+SELECT id, nome, deletado FROM avaliacaos;
 \q
 ```
 
-O curso deletado aparece com `deletado = t`. **Isso prova que a deleção é lógica.**
+O avaliacao deletado aparece com `deletado = t`. **Isso prova que a deleção é lógica.**
 
 ## Git
 
@@ -398,7 +398,7 @@ ssh -i "C:\caminho\da\chave.pem" ubuntu@IP-DA-VM
 docker ps                              # tem que ter estudopi e postgres-aula rodando
 docker logs estudopi                   # log da aplicação
 docker logs estudopi | tail -50        # só o final
-curl http://localhost:8080/cursos      # testar de dentro da VM
+curl http://localhost:8080/avaliacaos      # testar de dentro da VM
 docker network inspect rede            # os dois containers têm que estar aqui
 ```
 
@@ -453,9 +453,9 @@ public Curso buscarPorId(@PathVariable Long id) {
 // CursoServiceTests
 @Test
 public void test_shouldReturnCursoWhenBuscarPorIdExists() {
-    Curso curso = new Curso();
-    curso.setId(1L);
-    Mockito.when(cursoRepository.findByIdAndDeletadoFalse(1L)).thenReturn(Optional.of(curso));
+    Curso avaliacao = new Curso();
+    avaliacao.setId(1L);
+    Mockito.when(cursoRepository.findByIdAndDeletadoFalse(1L)).thenReturn(Optional.of(avaliacao));
 
     Assertions.assertEquals(1L, cursoService.buscarPorId(1L).getId());
 }
@@ -470,9 +470,9 @@ public void test_shouldThrowWhenBuscarPorIdDoesNotExist() {
 // CursoControllerTests
 @Test
 public void test_shouldReturnCursoById() throws Exception {
-    Curso curso = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));
+    Curso avaliacao = cursoRepository.save(Curso.fromDto(criarDto("Java Basico")));
 
-    mockMvc.perform(get("/cursos/" + curso.getId()))
+    mockMvc.perform(get("/avaliacaos/" + avaliacao.getId()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.nome").value("Java Basico"));
 }
@@ -483,14 +483,14 @@ public void test_shouldReturnCursoById() throws Exception {
 ```java
 // CursoService (usa o buscarPorId acima)
 public Curso atualizar(Long id, CursoDto dto) {
-    Curso curso = buscarPorId(id);
-    curso.setNome(dto.getNome());
-    curso.setDescricao(dto.getDescricao());
-    curso.setCategoria(dto.getCategoria());
-    curso.setCargaHoraria(dto.getCargaHoraria());
-    curso.setPreco(dto.getPreco());
-    curso.setInstrutor(dto.getInstrutor());
-    return cursoRepository.save(curso);
+    Curso avaliacao = buscarPorId(id);
+    avaliacao.setNome(dto.getNome());
+    avaliacao.setDescricao(dto.getDescricao());
+    avaliacao.setCategoria(dto.getCategoria());
+    avaliacao.setCargaHoraria(dto.getCargaHoraria());
+    avaliacao.setPreco(dto.getPreco());
+    avaliacao.setInstrutor(dto.getInstrutor());
+    return cursoRepository.save(avaliacao);
 }
 
 // CursoController
@@ -504,15 +504,15 @@ public Curso atualizar(@PathVariable Long id, @RequestBody CursoDto dto) {
 // CursoServiceTests
 @Test
 public void test_shouldUpdateCursoWhenExists() {
-    Curso curso = new Curso();
-    curso.setId(1L);
-    curso.setNome("Antigo");
+    Curso avaliacao = new Curso();
+    avaliacao.setId(1L);
+    avaliacao.setNome("Antigo");
 
     CursoDto dto = new CursoDto();
     dto.setNome("Novo");
 
-    Mockito.when(cursoRepository.findByIdAndDeletadoFalse(1L)).thenReturn(Optional.of(curso));
-    Mockito.when(cursoRepository.save(curso)).thenReturn(curso);
+    Mockito.when(cursoRepository.findByIdAndDeletadoFalse(1L)).thenReturn(Optional.of(avaliacao));
+    Mockito.when(cursoRepository.save(avaliacao)).thenReturn(avaliacao);
 
     Curso resultado = cursoService.atualizar(1L, dto);
 
@@ -522,9 +522,9 @@ public void test_shouldUpdateCursoWhenExists() {
 // CursoControllerTests
 @Test
 public void test_shouldUpdateCurso() throws Exception {
-    Curso curso = cursoRepository.save(Curso.fromDto(criarDto("Antigo")));
+    Curso avaliacao = cursoRepository.save(Curso.fromDto(criarDto("Antigo")));
 
-    mockMvc.perform(put("/cursos/" + curso.getId())
+    mockMvc.perform(put("/avaliacaos/" + avaliacao.getId())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(criarDto("Novo"))))
             .andExpect(status().isOk())
