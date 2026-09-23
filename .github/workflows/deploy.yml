@@ -1,10 +1,8 @@
-# Roda quando entra código na branch principal (push direto ou merge de PR).
-# Testa -> monta a imagem Docker -> sobe pro DockerHub -> entra na VM por SSH -> roda.
-name: Deploy
+name: Java CI with Maven
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -12,57 +10,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
 
-    - name: Set up JDK 25
-      uses: actions/setup-java@v4
-      with:
-        java-version: '25'
-        distribution: 'temurin'
-        cache: maven
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: "vinicius8797"
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # package roda os testes antes: se algum falhar, não faz deploy
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: vinicius8797/estudopi-ci:${{ github.sha }}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    # github.sha = hash do commit -> cada deploy tem uma tag única
-    - name: Build and push
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./Dockerfile
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/estudopi-ci:${{ github.sha }}
-
-    - name: Deploy na VM via SSH
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST_TEST }}
-        username: "ubuntu"
-        key: ${{ secrets.KEY_TEST }}
-        port: 22
-        script: |
-          # 1. cria a rede (se já existir, ignora o erro)
-          docker network create -d bridge rede || true
-
-          # 2. liga o Postgres; se ele ainda não existir, cria
-          docker start postgres-aula || docker run -d --name postgres-aula --restart unless-stopped -e POSTGRES_DB=auladb -e POSTGRES_USER=usuario -e POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }} --network rede postgres
-
-          # 3. derruba a versão antiga da aplicação
-          docker stop estudopi || true
-          docker rm --force estudopi || true
-
-          # 4. sobe a versão nova, na mesma rede do Postgres, com a senha vinda do secret
-          docker run -d -p 8080:8080 --restart unless-stopped --network rede -e DB_HOST=postgres-aula -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} --name estudopi ${{ secrets.DOCKERHUB_USERNAME }}/estudopi-ci:${{ github.sha }}
-
-          # 5. apaga imagens antigas para não lotar o disco da VM
-          docker image prune -af
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST_TEST }}
+          username: "ubuntu"
+          key: ${{ secrets.KEY_TEST }}
+          port: 22
+          script: |
+            docker stop estudopi
+            docker rm --force estudopi
+            docker run  -d -p 8080:8080 --name estudopi -e DB_HOST=postgres-aula --network=rede vinicius8797/estudopi-ci:${{ github.sha }}
