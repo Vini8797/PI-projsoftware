@@ -1,0 +1,30 @@
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Relatório do JaCoCo (é gerado de novo no pipeline)
+tests/
+
+# Variáveis de ambiente locais (senhas)
+.env
+
+# VS Code
+.vscode/
+
+# SO
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# ATENÇÃO: NÃO coloque "application*.properties" aqui.
+# O arquivo precisa ir pro GitHub, senão o build do Actions quebra.
+# As senhas ficam em variáveis de ambiente, então commitar é seguro.

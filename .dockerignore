@@ -1,0 +1,13 @@
+target
+tests
+.git
+.gitignore
+.github
+.idea
+*.iml
+.DS_Store
+README.md
+HELP.md
+*.log
+.env
+padroes
